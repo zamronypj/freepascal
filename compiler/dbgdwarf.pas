@@ -2770,6 +2770,10 @@ implementation
         if (sym.typ=paravarsym) and
            (vo_is_self in tparavarsym(sym).varoptions) then
           result:='this'
+        else if (ds_dwarf_method_class_prefix in current_settings.debugswitches) and
+                (sym.typ=procsym) and
+                (tprocsym(sym).owner.symtabletype=objectsymtable) then
+          result:=tprocsym(sym).owner.name^+'__'+sym.name
         else
           result := sym.Name;
       end;
