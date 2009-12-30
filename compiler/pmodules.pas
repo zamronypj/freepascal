@@ -701,6 +701,7 @@ implementation
                { save crc values }
                pu.checksum:=pu.u.crc;
                pu.interface_checksum:=pu.u.interface_crc;
+               pu.indirect_checksum:=pu.u.indirect_crc;
                { connect unitsym to the module }
                pu.unitsym.module:=pu.u;
                { add to symtable stack }
@@ -896,7 +897,8 @@ implementation
 {$ifdef EXTDEBUG}
          store_crc,
 {$endif EXTDEBUG}
-         store_interface_crc : cardinal;
+         store_interface_crc,
+         store_indirect_crc: cardinal;
          s1,s2  : ^string; {Saves stack space}
          force_init_final : boolean;
          init_procinfo,
@@ -1016,7 +1018,9 @@ implementation
            needs to be added implicitly }
          current_module.updatemaps;
 
-         { create whole program optimisation information }
+         { create whole program optimisation information (may already be
+           updated in the interface, e.g., in case of classrefdef typed
+           constants }
          current_module.wpoinfo:=tunitwpoinfo.create;
 
          { ... parse the declarations }
@@ -1239,6 +1243,7 @@ implementation
 
          { Write out the ppufile after the object file has been created }
          store_interface_crc:=current_module.interface_crc;
+         store_indirect_crc:=current_module.indirect_crc;
 {$ifdef EXTDEBUG}
          store_crc:=current_module.crc;
 {$endif EXTDEBUG}
@@ -1246,8 +1251,12 @@ implementation
            tppumodule(current_module).writeppu;
 
          if not(cs_compilesystem in current_settings.moduleswitches) then
-           if store_interface_crc<>current_module.interface_crc then
-             Message1(unit_u_interface_crc_changed,current_module.ppufilename^);
+           begin
+             if store_interface_crc<>current_module.interface_crc then
+               Message1(unit_u_interface_crc_changed,current_module.ppufilename^);
+             if store_indirect_crc<>current_module.indirect_crc then
+               Message1(unit_u_indirect_crc_changed,current_module.ppufilename^);
+           end;
 {$ifdef EXTDEBUG}
          if not(cs_compilesystem in current_settings.moduleswitches) then
            if (store_crc<>current_module.crc) and simplify_ppu then
